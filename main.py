@@ -1,42 +1,75 @@
-# Importar la biblioteca Lark
+# Importar las bibliotecas necesarias
+import tkinter as tk
+from tkinter import messagebox, scrolledtext
 from lark import Lark
 
-# Definir la gramática
+# Definir la gramática con soporte para números negativos, restas, divisiones y potencias
 grammar = """
-    start: expr
-    expr: expr "+" term  -> suma
-        | expr "-" term  -> resta
-        | term
-    term: term "*" factor  -> multiplicacion
-        | term "/" factor  -> division
+    start: expresion
+    expresion: expresion "+" termino  -> suma
+        | expresion "-" termino  -> resta
+        | termino
+    termino: termino "*" factor  -> multiplicacion
+        | termino "/" factor  -> division
         | factor
-    factor: factor "^" power  -> power
+    factor: factor "^" power  -> potencia
           | power    
     power: NUMBER        -> numero
             | "-" NUMBER        -> negativo
-            | "(" expr ")"  -> parentesis
+            | "(" expresion ")"  -> parentesis
 
     %import common.NUMBER
     %import common.WS
     %ignore WS
 """
 
-
 # Crear el parser
 parser = Lark(grammar, parser='lalr')
+
 
 # Función para analizar una expresión
 def parse_expression(expression):
     try:
         # Parsear la expresión
         tree = parser.parse(expression)
-        # Mostrar el árbol sintáctico
-        print("Árbol sintáctico:")
-        print(tree.pretty())
+        # Devolver el árbol sintáctico en formato legible
+        return f"Syntax tree:\n{tree.pretty()}"
     except Exception as e:
-        print(f"Error de sintaxis: {e}")
+        return f"Syntax error: {e}"
 
-# Probar el analizador
-expresion_usuario = input("Ingresa una expresión aritmética (por ejemplo, 3 + 5 * (2 + 1)): ")
-print(f"Analizando la expresión: {expresion_usuario}")
-parse_expression(expresion_usuario)
+
+# Función para manejar el botón "Analizar"
+def analyze_expression():
+    # Obtener la expresión ingresada por el usuario
+    expression = entry.get()
+    if not expression:
+        messagebox.showwarning("Advertencia", "Por favor, ingresa una expresión.")
+        return
+
+    # Analizar la expresión y mostrar el resultado en el cuadro de texto
+    result = parse_expression(expression)
+    output_text.delete(1.0, tk.END)  # Limpiar el contenido anterior
+    output_text.insert(tk.END, result)  # Insertar el nuevo resultado
+
+
+# Crear la ventana principal de la GUI
+root = tk.Tk()
+root.title("Analizador Sintáctico")
+root.geometry("500x400")
+
+# Crear y colocar los widgets en la ventana
+label = tk.Label(root, text="Ingresa una expresión aritmética:")
+label.pack(pady=10)
+
+entry = tk.Entry(root, width=50)
+entry.pack(pady=10)
+
+analyze_button = tk.Button(root, text="Analizar", command=analyze_expression)
+analyze_button.pack(pady=10)
+
+# Crear un cuadro de texto con barra de desplazamiento
+output_text = scrolledtext.ScrolledText(root, width=60, height=15, wrap=tk.WORD)
+output_text.pack(pady=10)
+
+# Iniciar el bucle principal de la GUI
+root.mainloop()
